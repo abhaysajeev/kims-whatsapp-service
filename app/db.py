@@ -1,8 +1,9 @@
-"""MariaDB connection helper.
+"""Database connection helper (MariaDB or MySQL).
 
 One plain connection per user (no pool): the worker is single-threaded and
 processes one job at a time. READ COMMITTED keeps the worker from holding gap
 locks that could make the hospital's inserts (and so our trigger) wait.
+Works with MariaDB 10.5 and MySQL 5.7.
 """
 from __future__ import annotations
 
@@ -13,7 +14,7 @@ from app.config import DatabaseSettings
 
 
 def connect(db: DatabaseSettings) -> pymysql.connections.Connection:
-    return pymysql.connect(
+    conn = pymysql.connect(
         host=db.host,
         port=db.port,
         user=db.user,
@@ -25,8 +26,20 @@ def connect(db: DatabaseSettings) -> pymysql.connections.Connection:
         connect_timeout=10,
         read_timeout=30,
         write_timeout=30,
-        init_command="SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED",
     )
+    _set_isolation(conn)
+    return conn
+
+
+def _set_isolation(conn) -> None:
+    """READ COMMITTED, unless statement-based binary logging forbids it (MySQL error
+    1665); then REPEATABLE READ, which only means slightly longer row locks."""
+    with conn.cursor() as cur:
+        cur.execute("SELECT @@log_bin AS log_bin, @@SESSION.binlog_format AS fmt")
+        row = cur.fetchone()
+        statement_binlog = bool(row["log_bin"]) and str(row["fmt"]).upper() == "STATEMENT"
+        level = "REPEATABLE READ" if statement_binlog else "READ COMMITTED"
+        cur.execute(f"SET SESSION TRANSACTION ISOLATION LEVEL {level}")
 
 
 def quote(identifier: str) -> str:

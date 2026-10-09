@@ -4,7 +4,7 @@
     python -m app.setup --check    verify only, change nothing
 
 Safe to run again: tables use CREATE TABLE IF NOT EXISTS (existing rows are
-kept) and triggers use CREATE OR REPLACE.
+kept) and triggers are dropped and re-created. Works on MariaDB and MySQL 5.7.
 """
 from __future__ import annotations
 
@@ -66,7 +66,13 @@ def main(argv: list[str] | None = None) -> int:
                 except pymysql.MySQLError as exc:
                     code = exc.args[0] if exc.args else None
                     print(f"  FAILED  {stmt.title}: {exc}", file=sys.stderr)
-                    if code in _PRIVILEGE_ERRORS:
+                    if code == 1419:
+                        print(
+                            "  Binary logging is on: creating triggers needs the SUPER privilege, "
+                            "or the DBA must SET GLOBAL log_bin_trust_function_creators = 1.",
+                            file=sys.stderr,
+                        )
+                    elif code in _PRIVILEGE_ERRORS:
                         print(
                             f"  The login {db.user} lacks a privilege needed here "
                             "(CREATE for tables, TRIGGER for triggers).",

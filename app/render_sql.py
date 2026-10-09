@@ -49,7 +49,7 @@ def main() -> int:
             "Queue and opt-in tables. Safe to re-run: existing tables and rows are kept.",
             "", create_tables(m)),
         "02_triggers.sql": _render(
-            f"Triggers on {m.source['table']}. Safe to re-run (CREATE OR REPLACE).",
+            f"Triggers on {m.source['table']}. Safe to re-run (drops and re-creates them).",
             "Run 01_tables.sql first. The triggers run as the login that creates them:\n"
             "never delete that login while the triggers exist.",
             create_triggers(m)),

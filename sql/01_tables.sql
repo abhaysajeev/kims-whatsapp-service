@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS `wa_notification_queue` (
   `phone`                 VARCHAR(20) NULL COMMENT 'as captured; normalised by the worker',
   `status`                ENUM('PENDING','PROCESSING','ACCEPTED','FAILED') NOT NULL DEFAULT 'PENDING',
   `attempt_count`         INT UNSIGNED NOT NULL DEFAULT 0,
-  `next_attempt_at`       DATETIME(6) NOT NULL DEFAULT UTC_TIMESTAMP(6),
+  `next_attempt_at`       DATETIME(6) NOT NULL DEFAULT '2000-01-01 00:00:00' COMMENT 'UTC; default = due now',
   `claim_id`              CHAR(36) NULL COMMENT 'set atomically when a worker claims the job',
   `message_uuid`          CHAR(36) NULL COMMENT 'ACL metadata.messageId, fixed on first attempt',
   `transaction_uuid`      CHAR(36) NULL COMMENT 'ACL metadata.transactionId, fixed on first attempt',
@@ -19,11 +19,11 @@ CREATE TABLE IF NOT EXISTS `wa_notification_queue` (
   `bsp_message_id`        VARCHAR(100) NULL COMMENT 'ACL responseId',
   `last_http_status`      SMALLINT NULL,
   `error_message`         VARCHAR(1000) NULL,
-  `created_at`            DATETIME(6) NOT NULL DEFAULT UTC_TIMESTAMP(6),
+  `created_at`            DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) COMMENT 'UTC (set explicitly)',
   `processing_started_at` DATETIME(6) NULL,
   `last_attempt_at`       DATETIME(6) NULL COMMENT 'written BEFORE calling ACL',
   `accepted_at`           DATETIME(6) NULL,
-  `updated_at`            DATETIME(6) NOT NULL DEFAULT UTC_TIMESTAMP(6),
+  `updated_at`            DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) COMMENT 'UTC (set explicitly)',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_source_event` (`source_record_id`, `event_type`),
   KEY `ix_claim` (`status`, `next_attempt_at`, `id`),
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS `wa_notification_queue` (
 -- Opt-in table wa_phone_optin
 CREATE TABLE IF NOT EXISTS `wa_phone_optin` (
   `phone`        VARCHAR(15) NOT NULL COMMENT 'normalised, e.g. 919876543210',
-  `opted_in_at`  DATETIME(6) NOT NULL DEFAULT UTC_TIMESTAMP(6),
+  `opted_in_at`  DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) COMMENT 'UTC (set explicitly)',
   `http_status`  SMALLINT NULL COMMENT 'ACL opt-in response status',
   PRIMARY KEY (`phone`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

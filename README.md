@@ -39,7 +39,7 @@ entry_exit_details ──trigger──► wa_notification_queue ◄──poll─
    docker compose run --rm wa-service setup
    docker compose run --rm wa-service setup --check
    ```
-   Uses the DB login from `.env`. Creates `wa_notification_queue`, `wa_phone_optin`
+   Works on MariaDB 10.5+ and MySQL 5.7+. Uses the DB login from `.env`. Creates `wa_notification_queue`, `wa_phone_optin`
    and the triggers `trg_eed_wa_ai` / `trg_eed_wa_au`. After this, every new visit is
    queued, but nothing is sent until the worker runs.
 5. **Start:** `docker compose up -d` → `docker compose ps` should show `healthy`
@@ -117,8 +117,9 @@ It prints the phone check, the PDF path and the exact JSON payload (token masked
 
 With the worker running, add one job for an existing visit and a phone you control:
 ```sql
-INSERT INTO wa_notification_queue (source_record_id, event_type, phone)
-VALUES (142, 'ENTRY', '9XXXXXXXXX');
+INSERT INTO wa_notification_queue
+  (source_record_id, event_type, phone, next_attempt_at, created_at, updated_at)
+VALUES (142, 'ENTRY', '9XXXXXXXXX', UTC_TIMESTAMP(6), UTC_TIMESTAMP(6), UTC_TIMESTAMP(6));
 ```
 Watch the logs, then check the row:
 ```sql

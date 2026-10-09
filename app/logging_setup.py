@@ -62,7 +62,7 @@ class PrettyFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         when = datetime.fromtimestamp(record.created, IST).strftime("%Y-%m-%d %H:%M:%S IST")
-        lines = [f"{when}  {record.levelname:<7}{record.getMessage()}"]
+        lines = [f"{when}  {record.levelname:<8} {record.getMessage()}"]
         data = _record_fields(record)
         if record.exc_info:
             data["exception"] = self.formatException(record.exc_info).splitlines()[-1]

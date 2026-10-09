@@ -1,5 +1,8 @@
 """Every database object this service owns, generated from table_mapping.yaml.
 
+Portable across MariaDB 10.5 (QA) and MySQL 5.7 (production): no expression
+defaults, and triggers are dropped and re-created (no CREATE OR REPLACE).
+
 The same statements are used three ways:
   - `python -m app.setup` executes them (no DELIMITER needed through the driver)
   - `python -m app.render_sql` writes them to sql/*.sql for review / manual runs
@@ -41,7 +44,7 @@ CREATE TABLE IF NOT EXISTS {q(queue['table'])} (
   `phone`                 VARCHAR(20) NULL COMMENT 'as captured; normalised by the worker',
   `status`                ENUM('PENDING','PROCESSING','ACCEPTED','FAILED') NOT NULL DEFAULT 'PENDING',
   `attempt_count`         INT UNSIGNED NOT NULL DEFAULT 0,
-  `next_attempt_at`       DATETIME(6) NOT NULL DEFAULT UTC_TIMESTAMP(6),
+  `next_attempt_at`       DATETIME(6) NOT NULL DEFAULT '2000-01-01 00:00:00' COMMENT 'UTC; default = due now',
   `claim_id`              CHAR(36) NULL COMMENT 'set atomically when a worker claims the job',
   `message_uuid`          CHAR(36) NULL COMMENT 'ACL metadata.messageId, fixed on first attempt',
   `transaction_uuid`      CHAR(36) NULL COMMENT 'ACL metadata.transactionId, fixed on first attempt',
@@ -51,11 +54,11 @@ CREATE TABLE IF NOT EXISTS {q(queue['table'])} (
   `bsp_message_id`        VARCHAR(100) NULL COMMENT 'ACL responseId',
   `last_http_status`      SMALLINT NULL,
   `error_message`         VARCHAR(1000) NULL,
-  `created_at`            DATETIME(6) NOT NULL DEFAULT UTC_TIMESTAMP(6),
+  `created_at`            DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) COMMENT 'UTC (set explicitly)',
   `processing_started_at` DATETIME(6) NULL,
   `last_attempt_at`       DATETIME(6) NULL COMMENT 'written BEFORE calling ACL',
   `accepted_at`           DATETIME(6) NULL,
-  `updated_at`            DATETIME(6) NOT NULL DEFAULT UTC_TIMESTAMP(6),
+  `updated_at`            DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) COMMENT 'UTC (set explicitly)',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_source_event` (`source_record_id`, `event_type`),
   KEY `ix_claim` (`status`, `next_attempt_at`, `id`),
@@ -65,7 +68,7 @@ CREATE TABLE IF NOT EXISTS {q(queue['table'])} (
         Statement(f"Opt-in table {queue['optin_table']}", f"""\
 CREATE TABLE IF NOT EXISTS {q(queue['optin_table'])} (
   `phone`        VARCHAR(15) NOT NULL COMMENT 'normalised, e.g. 919876543210',
-  `opted_in_at`  DATETIME(6) NOT NULL DEFAULT UTC_TIMESTAMP(6),
+  `opted_in_at`  DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) COMMENT 'UTC (set explicitly)',
   `http_status`  SMALLINT NULL COMMENT 'ACL opt-in response status',
   PRIMARY KEY (`phone`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
@@ -89,8 +92,10 @@ def create_triggers(m: Mapping) -> list[Statement]:
     # The CONTINUE handler swallows any error raised inside the body, so a
     # queue problem can never roll back the hospital's own insert/update.
     return [
+        Statement(f"Drop old trigger {queue['insert_trigger']} if present",
+                  f"DROP TRIGGER IF EXISTS {q(queue['insert_trigger'])}"),
         Statement(f"Trigger {queue['insert_trigger']} (ENTRY, and EXIT if inserted already exited)", f"""\
-CREATE OR REPLACE TRIGGER {q(queue['insert_trigger'])}
+CREATE TRIGGER {q(queue['insert_trigger'])}
 AFTER INSERT ON {q(s['table'])}
 FOR EACH ROW
 BEGIN
@@ -102,8 +107,10 @@ BEGIN
     END IF;
   END IF;
 END""", is_routine=True),
+        Statement(f"Drop old trigger {queue['update_trigger']} if present",
+                  f"DROP TRIGGER IF EXISTS {q(queue['update_trigger'])}"),
         Statement(f"Trigger {queue['update_trigger']} (EXIT when exit time goes NULL -> value)", f"""\
-CREATE OR REPLACE TRIGGER {q(queue['update_trigger'])}
+CREATE TRIGGER {q(queue['update_trigger'])}
 AFTER UPDATE ON {q(s['table'])}
 FOR EACH ROW
 BEGIN
