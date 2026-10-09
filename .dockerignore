@@ -1,0 +1,18 @@
+# Credentials are supplied at runtime via env_file, never baked into the image
+.env
+*.env.local
+
+.git/
+documentations/
+.gitignore
+pdf_output/
+pdf_samples/
+logs/
+heartbeat
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.vscode/
+.idea/

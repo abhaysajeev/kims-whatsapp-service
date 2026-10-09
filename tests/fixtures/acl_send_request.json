@@ -1,0 +1,28 @@
+{
+  "messaging_product": "whatsapp",
+  "recipient_type": "individual",
+  "to": "919876543210",
+  "type": "template",
+  "template": {
+    "name": "linkforentrypassaccess",
+    "language": {
+      "policy": "deterministic",
+      "code": "en"
+    },
+    "components": [
+      {
+        "type": "body",
+        "parameters": [
+          {
+            "type": "text",
+            "text": "https://cdn.example.test/qa_entry/example.pdf"
+          }
+        ]
+      }
+    ]
+  },
+  "metadata": {
+    "messageId": "generate uuidv7",
+    "transactionId": "generate uuidv7"
+  }
+}

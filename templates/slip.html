@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{ title }} - {{ header }}</title>
+<style>
+  /* Receipt slip, styled after the device-printed slip. Page height is set by
+     pdf_generator to fit the content, so the slip is always exactly one page. */
+  @page {
+    size: 80mm {{ page_height_mm }}mm;
+    margin: 5mm 4mm;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    color: #000;
+    background: #fff;
+    font-family: "DejaVu Sans Mono", monospace;
+    font-size: 8.6pt;
+    line-height: 1.3;
+  }
+  .center { text-align: center; }
+  .logo { margin: 0 0 1.6mm; }
+  .logo img { width: 58mm; height: auto; }
+  .header { font-size: 7.5pt; font-weight: bold; letter-spacing: 0.6pt; }
+  .title { font-size: 13pt; font-weight: bold; margin: 2mm 0 1mm; }
+  .rule { border: 0; border-top: 1.4pt dotted #000; margin: 1.6mm 0; }
+  .stamp { display: flex; justify-content: space-between; font-weight: bold; }
+  table.rows { width: 100%; border-collapse: collapse; margin: 1.5mm 0; }
+  table.rows td { padding: 0.35mm 0; vertical-align: top; }
+  td.label { white-space: nowrap; width: 1%; }
+  td.colon { width: 1%; padding: 0.35mm 1mm !important; }
+  td.value { text-align: right; overflow-wrap: anywhere; }
+  .qr-caption { margin: 2mm 0 1.5mm; }
+  .qr img { width: 38mm; height: 38mm; }
+</style>
+</head>
+<body>
+  {% if logo %}
+  <div class="center logo"><img src="{{ logo }}" alt="KIMSHEALTH"></div>
+  {% endif %}
+  <div class="center header">{{ header }}</div>
+  <div class="center title">{{ title }}</div>
+  <hr class="rule">
+  {% for stamp in stamps %}
+  <div class="stamp"><span>{{ stamp.date_label }}:{{ stamp.date }}</span><span>{{ stamp.time_label }}:{{ stamp.time }}</span></div>
+  {% endfor %}
+  <hr class="rule">
+
+  <table class="rows">
+    {% for label, value in rows %}
+    <tr><td class="label">{{ label }}</td><td class="colon">:</td><td class="value">{{ value }}</td></tr>
+    {% endfor %}
+  </table>
+
+  <hr class="rule">
+  {% if show_qr %}
+  <div class="center qr-caption">{% for line in qr_caption_lines %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}</div>
+  <div class="center qr"><img src="{{ qr_data_uri }}" alt="QR code"></div>
+  {% endif %}
+</body>
+</html>

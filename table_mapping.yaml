@@ -1,0 +1,42 @@
+# =============================================================================
+# Names of everything the service reads or creates in the database.
+# All SQL scripts, the worker and the PDF read names from here - nothing is
+# hard-coded. Table/column names: letters, digits, underscore only.
+# =============================================================================
+
+# The hospital's existing entry/exit table (read-only for this service)
+source:
+  table: entry_exit_details
+  primary_key: id
+  phone: phone_number
+  entry_time: entry_date          # printed DATE/TIME on the entry slip
+  exit_time: exit_date            # EXIT is queued when this goes NULL -> value
+  slip_number: slipnumber         # QR content is "<prefix> <slip_number>"
+  is_appointment: is_appoinment   # 1 -> QR prefix "1", appointment lines shown
+  is_regular: is_regular          # 1 -> QR prefix "2" (appointment wins if both)
+  details_json: entry_details     # JSON column holding the fields below
+
+# Keys inside source.details_json, as written by the Android app
+details_json_keys:
+  visitor_name: personName
+  whom_to_visit: hostName
+  company_name: companyName
+  department: departmentName
+  visit_purpose: visitPurpose
+  block: block_name
+  floor: floor_name
+  room: room_name
+  visitor_count: total_visitors
+  appointment_time: isAppointmentTime   # "dd-MM-yyyy HH:mm"
+
+# Objects this service creates
+queue:
+  table: wa_notification_queue
+  optin_table: wa_phone_optin
+  insert_trigger: trg_eed_wa_ai
+  update_trigger: trg_eed_wa_au
+
+# Least-privilege login the worker runs as (created by sql/03_service_user.sql)
+service_user:
+  name: kims_wa_service
+  host: "%"          # tighten to the VPS IP in production

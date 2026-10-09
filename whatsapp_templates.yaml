@@ -1,0 +1,36 @@
+# =============================================================================
+# WhatsApp template layouts, keyed by the ACL-approved template name.
+# Adding a template = adding an entry here (no code change), then pointing
+# TEMPLATE_NAME in .env at it.
+#
+# Each parameter takes its value from a "source". Available sources:
+#   pdf_url        public Bunny link to the generated slip
+#   visitor_name   details_json_keys.visitor_name
+#   slip_number    source.slip_number
+#   event_type     ENTRY or EXIT
+#   entry_time     source.entry_time, dd-MM-yyyy HH:mm:ss
+#   exit_time      source.exit_time,  dd-MM-yyyy HH:mm:ss
+# Text values are sent as a single line (newlines/tabs collapsed).
+# =============================================================================
+
+templates:
+  linkforentrypassaccess:
+    language_policy: deterministic
+    components:
+      - type: body
+        parameters:
+          - type: text
+            source: pdf_url
+
+  # Example of a template with a URL button (not approved - for reference only)
+  # some_button_template:
+  #   language_policy: deterministic
+  #   components:
+  #     - type: body
+  #       parameters:
+  #         - { type: text, source: visitor_name }
+  #     - type: button
+  #       sub_type: url
+  #       index: "0"
+  #       parameters:
+  #         - { type: text, source: pdf_url }

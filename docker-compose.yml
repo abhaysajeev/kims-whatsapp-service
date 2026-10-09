@@ -1,0 +1,31 @@
+services:
+  wa-service:
+    build:
+      context: .
+      target: runtime
+    image: kims-wa-service:latest
+    container_name: kims-wa-service
+    env_file: .env
+    environment:
+      # Must stay on the writable tmpfs; the HEALTHCHECK reads it
+      HEARTBEAT_FILE: /tmp/heartbeat
+    restart: unless-stopped
+    # Let the current job finish (HTTP calls time out well within this)
+    stop_grace_period: 60s
+    read_only: true
+    tmpfs:
+      - /tmp
+    volumes:
+      # Edit names/templates without rebuilding; restart the container after a change
+      - ./table_mapping.yaml:/app/table_mapping.yaml:ro
+      - ./whatsapp_templates.yaml:/app/whatsapp_templates.yaml:ro
+    extra_hosts:
+      # Lets DB_HOST=host.docker.internal reach a database on this same VPS
+      - "host.docker.internal:host-gateway"
+    mem_limit: 512m
+    cpus: 0.5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"

@@ -1,0 +1,1 @@
+"""KIMS WhatsApp acknowledgement service."""

@@ -1,0 +1,6 @@
+-r requirements.txt
+pytest==9.1.1
+# QR round-trip test: render the PDF and decode the QR like the Android app does
+pypdfium2==5.14.0
+zxing-cpp==3.1.1
+pillow==12.3.0
